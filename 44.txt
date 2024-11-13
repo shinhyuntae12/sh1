@@ -1,0 +1,24 @@
+def train_and_predict(data):
+    features = data[['INT_TMP', 'INT_REL_HD', 'hour', 'day_of_week', 'day', 'month', 'year', 
+                     'rolling_avg_tmp', 'rolling_avg_humidity']]
+    X = features.values
+
+    X_train, X_test, y_train, y_test = train_test_split(features, range(len(features)), test_size=0.2, random_state=42)
+
+    model = IsolationForest(n_estimators=100, contamination=0.01, random_state=42)
+    model.fit(X_train)
+    predictions = model.predict(X_test)
+    anomaly_scores = model.decision_function(X_test)
+
+    return X_test, y_test, predictions, anomaly_scores
+
+# 정밀도 성능 지표 및 이상치 출력 함수
+def evaluate_and_identify_anomalies(X_test, y_test, predictions, anomaly_scores, data):
+    anomalies = predictions == -1
+    precision = precision_score([-1 if i else 1 for i in anomalies], predictions, pos_label=-1)
+
+    anomaly_data = data.iloc[y_test][anomalies]
+    anomaly_data['Anomaly_Score'] = anomaly_scores[anomalies]
+
+    print("Precision Score:", precision)
+    print("Anomalies Detected:\n", anomaly_data)
